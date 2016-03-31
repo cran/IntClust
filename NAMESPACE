@@ -1,0 +1,3 @@
+export(ADEC,CEC,SNF,FeaturesOfCluster,SimilarityHeatmap,HeatmapSelection,Normalization,DetermineWeight_SilClust,SelectnrClusters,CompareSilCluster,CharacteristicFeatures,Cluster,Distance,ContFeaturesPlot,LabelPlot,ClusterPlot,HeatmapPlot,ColorPalette,BoxPlotDistance,ADC,ADECa,ADECb,ADECc,WonM,CECa,CECb,CECc,WeightedClust,SNFa,SNFb,SNFc,DetermineWeight_SimClust,WeightedSimClust,ReorderToReference,TrackCluster,SimilarityMeasure,ColorsNames,ComparePlot,DiffGenes,ChooseCluster,FindElement,PreparePathway,Pathways,PathwaysIter,PathwayAnalysis,PlotPathways,Geneset.intersect,SharedGenesPathsFeat,FindGenes,FindCluster,SharedComps,ProfilePlot,CompareInteractive,CompareSvsM,BinFeaturesPlot,Ultimate)
+
+
