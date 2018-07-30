@@ -1,0 +1,313 @@
+% 
+\documentclass[a4paper]{article}
+\usepackage[english]{babel}
+\usepackage{natbib}
+\usepackage{caption}
+\usepackage{subcaption}
+\usepackage{tcolorbox}
+\usepackage{Sweave}
+\usepackage{float}
+\usepackage{textcomp}
+\usepackage[OT1]{fontenc}
+\usepackage{url}
+\usepackage{afterpage}
+\usepackage{hyperref}
+\usepackage{geometry}
+\geometry{ hmargin=3cm, vmargin=2.5cm }
+\usepackage{graphicx}
+\usepackage{alltt}
+
+\title{The IntClust Package: Vignette}
+\author{Marijke Van Moerbeke}
+
+\begin{document}
+% \VignetteIndexEntry{IntClustvignette}
+\maketitle
+\tableofcontents
+\pagebreak{}
+\section{Introduction} 
+All multi-source clustering methods discussed in \citealp{VanMoerbeke2018a} and
+\citealp{VanMoerbeke2018b} are implemented in the \texttt{IntClust} R package.
+In addition, linear models for microarrays (limma; \citealp{Smyth2004}) for the detection of the differential gene expression and functional 
+class scoring (MLP; \citealp{Raghavan2012}) for pathway analysis are included. Both methods are relevant 
+if one of the high dimensional data sets contains information on gene expression data. 
+This vignette provides a short overview of the capacity of the \texttt{IntClust}
+package for data analysis and visualisation. 
+\section{Methods}
+The data structure we consider in the examples consist of $L$ different data
+sets $\mathbf{D}_{1}, \dots, \mathbf{D}_{L}$ of size $n \times m_{\ell}$ were $n$ is the number of rows and $m_{\ell}$ the number of columns in the $\ell$th data set. Note that we assume that the row dimension is the same in all data matrices. In case that the columns are the common dimension, the data matrices can be transposed. The aim of the analysis is to find robust clusters of rows across all data sources.\\ \\
+The multi-source clustering procedures that are included in the \texttt{IntClust} package are presented in Table \ref{Table1}.
+\begin{table}[H]
+\centering
+\caption{List of the multi-source clustering methods implemented in the
+\texttt{IntClust} package. The methods are introduced in \citealp{VanMoerbeke2018a}.}
+\renewcommand{\tabcolsep}{8pt}
+{\footnotesize
+\label{Table1}
+\begin{tabular}{llll}
+{\bf Category} & {\bf Method} & {\bf R function} & {\bf Reference}\\ \hline
+Direct & ADC & \texttt{ADC()} & \citet{Fodeh2013}\\
+Clustering& ADECa &\texttt{ADECa()} & \citet{Fodeh2013}\\
+& ADECb &\texttt{ADECb()} & \citet{Fodeh2013}\\
+& ADECc &\texttt{ADECc()} & \citet{Fodeh2013}\\
+Similarity-based & Weighted & \texttt{WeightedClust()} & \citet{PerualilaTan2016}\\
+approaches & SNF & \texttt{SNF()} & \citet{Wang2014a}\\
+Graph-based & CSPA& \texttt{EnsembleClustering()} & \citet{Strehl2002}\\ 
+approaches & HGPA& \texttt{EnsembleClustering()} & \citet{Strehl2002}\\
+& MCLA & \texttt{EnsembleClustering()} & \citet{Strehl2002} \\ 
+& HBGF & \texttt{HBGF()} & \citet{Fern2004} \\ 
+& Balls & \texttt{ClusteringAggregation()} & \citet{Gionis2007} \\
+& Aggl.& \texttt{ClusteringAggregation()} & \citet{Gionis2007} \\
+& Furthest & \texttt{ClusteringAggregation()} & \citet{Gionis2007} \\
+Voting-based & CVAA & \texttt{CVAA()} &\citet{Saeed2012}\\
+consensus &W-CVAA & \texttt{CVAA()}  &\citet{Saeed2014}\\
+approaches& IVC & \texttt{ConsensusClustering()}&\citet{Nguyen2007}\\
+& IPVC & \texttt{ConsensusClustering()} &\citet{Nguyen2007}\\
+& IPC & \texttt{ConsensusClustering()}&\citet{Nguyen2007}\\
+& EA & \texttt{EvidenceAccumulation()} &\citet{Fred2005}\\
+&M-ABC & \texttt{M\_ABC()} & \citet{Amaratunga2008}\\
+& CTS & \texttt{LinkBasedClustering()}& \citet{Iam-on2010}\\
+& SRS & \texttt{LinkBasedClustering()}& \citet{Iam-on2010}\\
+& ASRS & \texttt{LinkBasedClustering()}& \citet{Iam-on2010}\\
+& CECa & \texttt{CECa()}  & \citet{Fodeh2013}\\
+& CECb& \texttt{CECb()}  & \citet{Fodeh2013}\\
+& CECc& \texttt{CECc()}  & \citet{Fodeh2013}\\
+Hierarchy-based & EHC & \texttt{EHC()}&\citet{Hossain2012}\\
+approaches & HEC & \texttt{HEC()}& \citet{Zheng2014}\\
+\end{tabular}
+}
+\end{table}
+\noindent As pointed out in in \citealp{VanMoerbeke2018a}, the methods either
+integrate the data sets into a combined data matrix or calculate a distance matrix based on all sources provided as input. Once the integration step is completed, hierarchical clustering with the Ward link is performed.\\ \\
+The resulting clusters of the multi-source methods consist of objects that are expressing similarity in each of the provided data sets. Interest could, for example, be in the clusters that remain stable across methods. This stability indicates a fairly robust (sub)cluster of objects based on multiple sources of data. For the analysis presented in this chapter, the objects represent compounds.\\ \\
+Although the focus is on clustering multiple data sources simultaneously, it is important to investigate the clustering results of the individual data sources as well. This reveals whether or not the single data sources already show a high degree of resemblance in the formed clusters.
+\noindent Further, if the multi-source clustering procedures are executed, the influence of each data source can be investigated. If a cluster of interest has been chosen, a secondary analysis can be conducted.
+\section{Application of \texttt{IntClust}}
+We illustrate several functions of the \texttt{IntClust} package using the data of the MCF7 cell line. The data sets consist of a $ 56 \times 350 $ fingerprint features matrix and a $56 \times 477$ target prediction matrix. Both data matrices are binary with rows representing compounds and are included in the \texttt{IntClust} package. In addition, a $2434 \times 56$ gene expression data matrix is available as well. The package can be installed using the following code.\\
+
+<<Install,message=FALSE,eval=FALSE>>=
+install.packages("IntClust")
+library(IntClust)
+data(fingerprintMat)
+data(targetMat)
+@
+\subsection{Single source clustering}
+Depending on the type of the data matrix, several distance measures can be used: \texttt{Euclidean} for continuous data and \texttt{jaccard} or \texttt{tanimoto} for binary data. The argument \texttt{clust="agnes"} implies that the implemented method for clustering is agglomerative hierarchical clustering \citep{Hastie2009}. Data normalization can be performed using the argument \texttt{normalize=TRUE}. The implemented normalizing methods are: Quantile-Normalization, Fisher-Yates Normalization, standardization and range normalization. For the MCF7 data, normalization is not necessary since both data sets are binary. The complete code for the single source clustering is given below.\\
+
+<<SingleClust,message=FALSE,eval=FALSE>>=
+MCF7_F <- Cluster(Data=fingerprintMat,type="data",distmeasure="tanimoto",
+          normalize=FALSE,method=NULL,clust="agnes",linkage="flexible",gap=FALSE) 
+		
+MCF7_T <- Cluster(Data=targetMat,type="data",distmeasure="tanimoto",
+          normalize=FALSE,method=NULL,clust="agnes",linkage="flexible",gap=FALSE)
+@
+\noindent Two options are available to select the number of clusters. The argument \texttt{gap=TRUE} uses the gap statistic \citep{Hastie2009} for the selection of the number of clusters. A second option to determine the number of clusters is implemented in the function \texttt{SelectnrClusters()}. In this case medoid clustering is performed \citep{Struyf1997} for a sequence of numbers of clusters for each provided data source. The number corresponding with the maximal average silhouette widths over the data sources can be taken as an optimal number of clusters.\\
+
+<<NrClusters,message=FALSE,eval=FALSE>>=
+List=list(fingerprintMat,targetMat)
+NrClusters=SelectnrClusters(List=List,type="data",distmeasure=c("tanimoto",
+           "tanimoto"),nrclusters=seq(5,20),normalize=c(FALSE,FALSE),
+            names=c("FP","TP"))
+@
+\noindent In the specific case of these data sources, the average silhouette width will only increase as the number of clusters increases. Therefore, we will rely on
+the gap statistic and conclude on seven clusters. A dendrogram with a different colour per cluster can be used for visualization in the following way.\\
+
+<<Colours,message=FALSE,eval=FALSE>>=
+Colours <- ColorPalette(colors=c("chocolate","firebrick2","darkgoldenrod2",
+           "darkgreen","blue2","darkorchid3","deeppink"),ncols=7) 
+@
+\noindent The R object \texttt{Colours} contains the colour patterns and the function \texttt{ClusterPlot()} produces the dendrograms (with seven clusters based on the gap statistic) in Figure \ref{Dends1} and \ref{Dends2}.\\
+
+<<Fig1,message=FALSE,eval=FALSE>>=
+ClusterPlot(Data1=MCF7_F,nrclusters=7,cols=Colours,main="Clustering on 
+           Fingerprints: Dendrogram",ylim=c(-0.1,1.8))
+
+ClusterPlot(Data1=MCF7_T,nrclusters=7,cols=Colours,colorComps=NULL,main="Clustering on 
+            Targets: Dendrogram",ylim=c(-0.1,2.5))
+@
+\begin{figure}[H]
+\centering
+\begin{subfigure}{\textwidth}
+\includegraphics[width=\textwidth,height=8.2cm]{IntClust_ClusterPlot_F.pdf}
+\caption{Fingerprint clustering.}
+\label{Dends1}
+\end{subfigure}
+
+\begin{subfigure}{\textwidth}
+\includegraphics[width=\textwidth,height=8.2cm]{IntClust_ClusterPlot_T.pdf}
+\caption{Target prediction clustering.}
+\label{Dends2}
+\end{subfigure}
+\caption{Dendrograms of the individual data clustering results. Panel a: The fingerprint clustering. Panel b: The target prediction clustering.}
+\label{Dends}
+\end{figure}
+\noindent We can for example investigate the purple cluster shown in Figure \ref{Dends1}. The cluster does not undergo a lot of changes under the influence
+of the target predictions although the group is split across the blue and yellow clusters.
+\newpage
+\subsection{Multi-source clustering}
+\noindent Several multi-source clustering procedures, listed in Table \ref{Table1}, have been implemented in the \texttt{IntClust} package. We illustrate the Aggregated Data Clustering (ADC), Weighted clustering and Weighting on Membership Clustering (WonM) methods. Multi-source clustering using other methods can be conducted easily using the appropriate function.
+\subsubsection{Aggregated data clustering (\texttt{ADC()})}
+Aggregated data clustering can only be applied if all data sources are of the same type. The first step fuses all data matrices into one larger matrix such that only one data matrix remains. Next, clustering is performed on this single matrix.\\
+
+<<ADC,message=FALSE,eval=FALSE>>=
+L=list(fingerprintMat,targetMat)
+MCF7_ADC=ADC(List=L,distmeasure="tanimoto",normalize=FALSE,clust="agnes",
+         linkage="flexible")
+@
+\subsubsection{Weighted clustering (\texttt{WeightedClust()})}
+The weighted clustering computes a single distance matrix using all data sources. For each data matrix, a distance matrix \(\widetilde{\mathbf{DM}}_{\ell}\) is calculated. The distance matrices are combined in a weighted linear combination  \( \mathbf{DM}_{w} \)on which clustering is performed. The option \texttt{weight=seq(0,1,0.1)} implies that in our setting of two data sets
+\[
+\mathbf{DM}_{w}=w_{1}\cdot\widetilde{\mathbf{DM}}_{1}+(1-w_{1})\cdot\widetilde{\mathbf{DM}}_{2},
+\]
+for a sequence of weights $w_{1}=(0,0.1,0.2,\dots,0.9,1)$.\\
+
+<<Weighted,message=FALSE,eval=FALSE>>=
+L=list(fingerprintMat,targetMat)
+MCF7_Weighted=WeightedClust(L,type="data",distmeasure=c("tanimoto","tanimoto"),
+              normalize=c(FALSE,FALSE),weight=seq(0,1,0.1),weightclust=0.5,
+              StopRange=FALSE)
+@
+\subsubsection{Weighting on membership clustering (\texttt{WonM()})}
+Weighting on membership performs hierarchical clustering on each data source separately. The resulting dendrograms are cut, multiple times, into into clusters for a range of numbers of clusters $k$. Each time, a binary incidence matrix is set up. A value of zero indicates that a pair of objects resides in the same cluster to ensure distances. All incidence matrices are summed over the values of $k$ per data source and the different data sources. On the resulting consensus matrix, hierarchical clustering is performed once again to obtain the final clustering taking into account all information of the data sources.\\
+
+<<WonM,message=FALSE,eval=FALSE>>=
+L=list(fingerprintMat,targetMat)
+MCF7_WonM=WonM(List=L,type="data",distmeasure=c("tanimoto","tanimoto"),
+          normalize=c(FALSE,FALSE),nrclusters=seq(5,25),linkage=
+          c("flexible","flexible"))
+@
+\newpage
+\subsection{Comparison of results}
+The clusters of the multi-source methods consist of objects that are expected to be similar in each of the individual data sources. Clusters that remain stable over the applied the methods are of interest. If a cluster does not undergo too many changes and is found multiple times, the objects show a similarity with a high confidence. Further, it can be hypothesized that the used data sources are related for the selected clusters. This can provide more insight into the MOA of compounds in drug disovery experiments. One way to visualize the clustering solutions of the multi-source methods is to follow the changes in the solutions obtained for different clustering methods. For the above example, the function \texttt{ComparePlot()} was used to produce Figure \ref{MCF7_All} which presents a comparison across all executed clustering procedures. We notice that the blue, green and pink cluster remain stable over all other methods. Under the influence of the target predictions one compound disappears and is replaced by another. For the weighted procedures, the results for all weights are shown.\\ \\
+Different methods cluster the compounds in a different order and this results in non-corresponding cluster numbers. Therefore, one method is used as a reference (the clustering based on the fingerprints features for the example presented in Figure \ref{MCF7_All}) and the cluster numbers obtained for the other methods are rearranged according to the reference solution. The re-appointing of the cluster numbers is based on finding the cluster that relatively has the most in common with one of the reference clusters and taking over this number. In the \texttt{IntClust} package, this is done using the function \texttt{MatrixFunction()}  in which the rearranging algorithm is partly based on the Gale-Shapley algorithm \citep{Kleinberg2005}. It creates a matrix of which the columns are the compounds in the order of clustering by reference method. The rows are the different methods and the values of the cells are the rearranged cluster numbers which are given different colours in the resulting figure. \\
+
+<<ComparePlot,message=FALSE,eval=FALSE>>=
+L=list(MCF7_F,MCF7_ADC,MCF7_WonM,MCF7_Weighted,MCF7_T)
+N=c("FP","ADC","WonM",paste("Weight",seq(1,0,-0.1),sep=" "),"TP")
+ComparePlot(L,nrclusters=7,cols=Colours,fusionsLog=TRUE,weightclust=FALSE,names=N,
+margins=c(9.1,4.1,4.1,4.1),plottype="new",location=NULL)
+@
+
+\begin{figure}[H] 
+\centering
+\includegraphics[width=\textwidth,height=8cm]{IntClustComparePlot.pdf}
+\caption{Visualization of the multi-source clustering results of the fingerprint and target prediction data. The first row represents the single source clustering of the fingerprint data and the last row represents the single source clustering of the target prediction data. The single source clustering result of the fingerprint data set is used as a reference clustering. The results of the remaining methods are coloured to this reference.}
+\label{MCF7_All}
+\end{figure}
+\noindent If a weighted clustering was performed, the \texttt{ComparePlott()} function allows us to follow the membership changes in a chosen cluster with respect to the changing weight. The function \texttt{FindCluster()} can be used in order to find the compounds of a cluster.\\
+
+<<FindCluster,message=FALSE,eval=FALSE>>=
+Comps=FindCluster(List=L,nrclusters=7,select=c(1,6))
+Comps 
+@
+\noindent Once the compound subset is found (the R object \texttt{Comps} in our example) the function \texttt{TrackCluster()} can be used to produce Figure \ref{MCF7_Track} to track the changes in the cluster with respect to the weights.\\
+
+<<Track,message=FALSE,eval=FALSE>>=
+Tracking=TrackCluster(List=L,Selection=Comps,nrclusters=7,followMaxComps=FALSE,
+		followClust=TRUE,fusionsLog=TRUE,weightclust=FALSE,
+		names=N,selectionPlot=FALSE,table=FALSE,legendposy=2.4,
+		completeSelectionPlot=TRUE,cols=Colours,plottype="sweave",
+		location=NULL)
+@
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=\textwidth,height=8cm]{IntClustTrackingPlot.pdf}
+\caption{Tracking of the purple cluster across the multi-source clustering methods.}
+\label{MCF7_Track}
+\end{figure}
+\newpage
+\subsection{Characteristic features}
+In the next stage of the analysis,  we can investigate whether there are fingerprints features or target predictions that define a specific cluster using the function \texttt{ChooseCluster()}. The function performs a Fisher's exact test \citep{Fisher1922} in order to discover discerning features. Note that the function has the option to provide an interactive input as well.\\
+
+<<Features,message=FALSE,eval=FALSE>>=
+MCF7_Feat=ChooseCluster(Interactive=FALSE,leadCpds=list(Comps),clusterResult=MCF7_F,
+          colorLab=MCF7_F,binData=list(fingerprintMat,targetMat),datanames=
+          c("FP","TP"),topChar = 20,topG = 20)
+@
+\noindent The function \texttt{BinFeaturesPlot()} produces the image plot with the top identified features presented in Figure \ref{MCF7_Top}.
+<<FeatPlot,message=FALSE,eval=FALSE>>=
+BinFeaturesPlot_SingleData(leadCpds=Comps,orderLab=MCF7_F,features=MCF7_Feat
+                           $Characteristics$FP$TopFeat$Names,data=fingerprintMat,
+                           colorLab=MCF7_F,nrclusters=7,cols=Colours,name=c("FP"))
+                 
+BinFeaturesPlot_SingleData(leadCpds=Comps,orderLab=MCF7_F,features=MCF7_Feat
+                           $Characteristics$TP$TopFeat$Names,data=targetMat,
+                           colorLab=MCF7_F,nrclusters=7,cols=Colours,name=c("TP"))
+@
+\newpage
+\begin{figure}[H]
+\centering
+  \begin{subfigure}[b]{\textwidth}
+     \centering
+\includegraphics[width=\textwidth,height=7cm]{IntClustFP.pdf}
+\caption{Top 20 fingerprints.}\
+\label{MCF7_F}
+\end{subfigure}
+
+\begin{subfigure}[b]{\textwidth}
+\centering
+\includegraphics[width=\textwidth,height=7cm]{IntClustTP.pdf}
+\caption{Top 20 target predictions.}
+\label{MCF7_T}
+\end{subfigure}
+\caption{The top discriminating targets of the purple cluster by the fingerprint and target prediction data (identified by Fisher's exact test). Columns represent compounds and rows represent target predictions. A hit target is coloured green for the cluster of interest and blue for the other compounds. The labels on the left indicate the data sets while the feature names are indicated on the right. Panel a: Fingerprint features. Panel b: Target prediction features.}
+\label{MCF7_Top}
+\end{figure}
+\newpage
+\section{Exploring connections with external data sets}
+In addition to the fingerprint features and target prediction data matrices, the MCF7 data consists of a gene expression data matrix for the 56 compounds that was not included in the analysis up to this stage. In this section we explore how gene expression profiles change across the cluster solutions.
+\subsection{Differential gene expression}
+The \texttt{IntClust} package can be used to detect differentially expressed genes between a chosen cluster and the rest of the compounds using the limma method \citep{Smyth2004}. The p-values are adjusted to multiple testing using the BH-FDR method \citep{Benjamini1995}. The option \texttt{TopG=10} implies that the top 10 genes will be identified.\\
+
+<<DEGenes,message=FALSE,eval=FALSE>>=
+data(geneMat)
+MCF7_Genes=DiffGenes(List=NULL,Selection=Comps,geneExpr=geneMat,method="limma",
+           sign=0.05,topG=10)
+Genes=MCF7_Genes$Selection$Genes$TopDE$ID				  
+@
+\noindent Genes profiles can be plotted with the function \texttt{ProfilePlot()}.\\
+
+<<GenePlot,message=FALSE,eval=FALSE>>=
+ProfilePlot(Genes=Genes[1:5],Comps=Comps,geneExpr=geneMat,raw=FALSE,
+            order=MCF7_F,color=MCF7_F,nrclusters=7,cols=Colours,
+            addLegend=TRUE,margins=c(8.1,4.1,1.1,6.5),plottype="sweave",
+            location=NULL)
+@
+\begin{figure}[H] 
+\centering
+\includegraphics[width=\textwidth,height=8cm]{IntClustProfilePlot.pdf}
+\caption{The top $5$ genes of the purple cluster as identified by limma.}
+\label{MCF7_TopGenes}
+\end{figure}
+\newpage
+\subsection{Pathway analysis}
+The final step in the analysis is to allocate the identified genes to a gene set or pathway. If a gene set is enriched the probability to observe significant genes of this gene set by chance is low for the selected cluster. The selected database for pathway analysis is the Gene Ontology (GO) database and the
+pathway analysis method MLP \citep{Raghavan2012} is implemented in the \texttt{PathwaySelectionIter()} function. We can count how many of the pathways are shared over the different iterations with the \texttt{Genseset.intersectSelection()} function. A figure illustrating the discovered pathways, as shown for the example in Figure \ref{MCF7_Paths}, can be made with the \texttt{PlotPathways()} function. 
+<<Pathways,message=FALSE,eval=FALSE>>=
+data(GeneInfo)
+data(GS)
+L=list(MCF7_Genes)
+
+MCF7_Paths=PathwayAnalysis(List=L,Selection=Comps,geneExpr=geneMat,
+           method = c("limma","MLP"),geneInfo=GeneInfo,
+           geneSetSource="GOBP",topP = NULL,topG=NULL,GENESET=GS,
+           sign = 0.05,niter=2)
+
+PlotPathways(MCF7_Paths$Selection$Pathways)
+@
+
+\begin{figure}[H] 
+\centering
+\includegraphics[width=\textwidth,height=11cm]{IntClustPathwaysPlot.pdf}
+\caption{The top pathways annotated to the differentially expressed genes of the purple cluster as determined by the MLP analysis.}
+\label{MCF7_Paths}
+\end{figure}
+\newpage
+\section{Software used}
+<<sessionInfo, echo=FALSE, results=tex>>=
+toLatex(sessionInfo())
+@
+\bibliographystyle{asa}
+\bibliography{IntClust_Biblio}
+\end{document}
